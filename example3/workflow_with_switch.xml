@@ -1,0 +1,444 @@
+<?xml version="1.0"?>
+<workflow-app xmlns="uri:oozie:workflow:0.1" name="${workflow_name}_${er_cron_date_unified}">
+    <start to="CheckAndMarkRfiRecentDataReadyFile"/>
+    <action name="CheckAndMarkRfiRecentDataReadyFile">
+        <ssh>
+            <host>${er_cron_host}</host>
+            <command>/bin/bash</command>
+            <args>${check_and_mark_max_done_file_script}</args>
+            <args>${etl_daily_aggregate_jobs_done_marker_path}</args>
+            <args>${rfi_recent_data_ready_marker_path}</args>
+            <capture-output/>
+        </ssh>
+        <ok to="CheckAndMarkRfiRecentConvDataReadyFile"/>
+        <error to="fail_1"/>
+    </action>
+
+    <action name="CheckAndMarkRfiRecentConvDataReadyFile">
+        <ssh>
+            <host>${er_cron_host}</host>
+            <command>/bin/bash</command>
+            <args>${check_and_mark_max_done_file_script}</args>
+            <args>${epiphany_daily_attribution_jobs_done_marker_path}</args>
+            <args>${rfi_recent_conv_data_ready_marker_path}</args>
+            <capture-output/>
+        </ssh>
+        <ok to="fork_load_data"/>
+        <error to="fail_1"/>
+    </action>
+
+    <fork name="fork_load_data">
+        <path start="LoadAdvertiserDataToHive"/>
+        <path start="LoadAdvertiserFilterReducerConfig"/>
+        <path start="LoadAdvertiserAdMapping"/>
+        <path start="LoadPublisherDataToHive"/>
+        <path start="LoadPublisherFilterReducerConfig"/>
+        <path start="LoadAdvertiserConversionDataToHive"/>
+        <path start="LoadAdvertiserXdConversionDataToHive"/>
+        <path start="LoadConversionFilterReducerConfig"/>
+        <path start="LoadRfiAggregateImpressions"/>
+        <path start="LoadRfiAggregateDailyConversionAction"/>
+    </fork>
+    <join name="join_load_data" to="CheckLoadDataError"/>
+
+    <action name="LoadAdvertiserDataToHive">
+        <ssh>
+            <host>${er_cron_host}</host>
+            <command>/bin/bash</command>
+            <args>${load_adv_data_to_hive_script}</args>
+            <args>${environment}</args>
+            <args>${vertica_reports_db_ro_url}</args>
+            <args>${vertica_reports_db_ro_username}</args>
+            <args>${vertica_reports_db_ro_pwd}</args>
+            <args>${vertica_reports_db_ro_schema}</args>
+            <args>${er_cron_date_unified}</args>
+            <args>${advertiser_param_data_inclusion_days}</args>
+            <args>${rfi_recent_data_ready_marker_path}</args>
+            <capture-output/>
+        </ssh>
+        <ok to="join_load_data"/>
+        <error to="fail_1"/>
+    </action>
+
+    <action name="LoadAdvertiserFilterReducerConfig">
+        <ssh>
+            <host>${er_cron_host}</host>
+            <command>${CODE_BASE}/dp/externalreport/whitelist_info_bin</command>
+            <args>--type</args>
+            <args>advertiser</args>
+            <args>--output</args>
+            <args>${VAR_BASE}/config_advertiser_filter.yml</args>
+            <capture-output/>
+        </ssh>
+        <ok to="join_load_data"/>
+        <error to="fail_1"/>
+    </action>
+
+    <action name="LoadAdvertiserAdMapping">
+        <ssh>
+            <host>${er_cron_host}</host>
+            <command>/bin/bash</command>
+            <args>${CODE_BASE}/scripts/hive/load-advertiser-ad-mapping</args>
+            <args>${environment}</args>
+            <args>${reports_db_ro_url}</args>
+            <args>${reports_db_ro_username}</args>
+            <args>${reports_db_ro_pwd}</args>
+            <args>${reports_db_ro_schema}</args>
+            <args>${er_cron_date_unified}</args>
+            <capture-output/>
+        </ssh>
+        <ok to="join_load_data"/>
+        <error to="join_load_data"/>
+    </action>
+
+    <action name="LoadPublisherDataToHive">
+        <ssh>
+            <host>${er_cron_host}</host>
+            <command>/bin/bash</command>
+            <args>${load_pub_data_to_hive_script}</args>
+            <args>${environment}</args>
+            <args>${reports_db_ro_url}</args>
+            <args>${reports_db_ro_username}</args>
+            <args>${reports_db_ro_pwd}</args>
+            <args>${reports_db_ro_schema}</args>
+            <args>${er_cron_date_unified}</args>
+            <args>${publisher_param_data_inclusion_days}</args>
+            <args>${rfi_recent_data_ready_marker_path}</args>
+            <capture-output/>
+        </ssh>
+        <ok to="join_load_data"/>
+        <error to="join_load_data"/>
+    </action>
+
+    <action name="LoadPublisherFilterReducerConfig">
+        <ssh>
+            <host>${er_cron_host}</host>
+            <command>${CODE_BASE}/dp/externalreport/whitelist_info_bin</command>
+            <args>--type</args>
+            <args>publisher</args>
+            <args>--output</args>
+            <args>${VAR_BASE}/config_publisher_filter.yml</args>
+            <capture-output/>
+        </ssh>
+        <ok to="join_load_data"/>
+        <error to="join_load_data"/>
+    </action>
+
+    <action name="LoadAdvertiserConversionDataToHive">
+        <ssh>
+            <host>${er_cron_host}</host>
+            <command>/bin/bash</command>
+            <args>${load_adv_conv_data_to_hive_script}</args>
+            <args>${environment}</args>
+            <args>${vertica_reports_db_ro_url}</args>
+            <args>${vertica_reports_db_ro_username}</args>
+            <args>${vertica_reports_db_ro_pwd}</args>
+            <args>${vertica_reports_db_ro_schema}</args>
+            <args>${er_cron_date_unified}</args>
+            <args>${advertiser_conversion_data_inclusion_days}</args>
+            <args>${rfi_recent_conv_data_ready_marker_path}</args>
+            <capture-output/>
+        </ssh>
+        <ok to="join_load_data"/>
+        <error to="join_load_data"/>
+    </action>
+
+    <action name="LoadAdvertiserXdConversionDataToHive">
+        <ssh>
+            <host>${er_cron_host}</host>
+            <command>/bin/bash</command>
+            <args>${load_adv_xd_conv_data_to_hive_script}</args>
+            <args>${environment}</args>
+            <args>${vertica_reports_db_ro_url}</args>
+            <args>${vertica_reports_db_ro_username}</args>
+            <args>${vertica_reports_db_ro_pwd}</args>
+            <args>${vertica_reports_db_ro_schema}</args>
+            <args>${er_cron_date_unified}</args>
+            <args>${advertiser_conversion_data_inclusion_days}</args>
+            <args>${rfi_recent_conv_data_ready_marker_path}</args>
+            <capture-output/>
+        </ssh>
+        <ok to="join_load_data"/>
+        <error to="join_load_data"/>
+    </action>
+
+    <action name="LoadConversionFilterReducerConfig">
+        <ssh>
+            <host>${er_cron_host}</host>
+            <command>${CODE_BASE}/dp/externalreport/whitelist_info_bin</command>
+            <args>--type</args>
+            <args>conversion</args>
+            <args>--output</args>
+            <args>${VAR_BASE}/config_conversion_filter.yml</args>
+            <capture-output/>
+        </ssh>
+        <ok to="join_load_data"/>
+        <error to="join_load_data"/>
+    </action>
+
+    <action name="LoadRfiAggregateImpressions">
+        <ssh>
+            <host>${er_cron_host}</host>
+            <command>/bin/bash</command>
+            <args>${CODE_BASE}/scripts/hive/load_rfi_aggregate_impressions</args>
+            <args>${environment}</args>
+            <args>${er_cron_date_unified}</args>
+            <args>${rfi_agg_data_lookback_days}</args>
+            <capture-output/>
+        </ssh>
+        <ok to="join_load_data"/>
+        <error to="join_load_data"/>
+    </action>
+
+    <action name="LoadRfiAggregateDailyConversionAction">
+        <ssh>
+            <host>${er_cron_host}</host>
+            <command>/bin/bash</command>
+            <args>${CODE_BASE}/scripts/hive/load_rfi_aggregate_daily_conversion_action</args>
+            <args>${environment}</args>
+            <args>${er_cron_date_unified}</args>
+            <args>${rfi_agg_data_lookback_days}</args>
+            <args>${rfi_recent_conv_data_ready_marker_path}</args>
+            <args>${er_rfi_agg_daily_conversion_action_marker_path}</args>
+            <capture-output/>
+        </ssh>
+        <ok to="fork_load_conv_data"/>
+        <error to="join_load_data"/>
+    </action>
+
+    <fork name="fork_load_conv_data">
+        <path start="LoadRfiAggregateConversionAction"/>
+        <path start="LoadRfiXdAggregateConversionAction"/>
+    </fork>
+
+    <action name="LoadRfiAggregateConversionAction">
+        <ssh>
+            <host>${er_cron_host}</host>
+            <command>/bin/bash</command>
+            <args>${CODE_BASE}/scripts/hive/load_rfi_aggregate_conversion_action</args>
+            <args>${environment}</args>
+            <args>${er_cron_date_unified}</args>
+            <args>${rfi_agg_data_lookback_days}</args>
+            <capture-output/>
+        </ssh>
+        <ok to="join_load_conv_data"/>
+        <error to="join_load_conv_data"/>
+    </action>
+
+    <action name="LoadRfiXdAggregateConversionAction">
+        <ssh>
+            <host>${er_cron_host}</host>
+            <command>/bin/bash</command>
+            <args>${CODE_BASE}/scripts/hive/load_rfi_xd_aggregate_conversion_action</args>
+            <args>${environment}</args>
+            <args>${er_cron_date_unified}</args>
+            <args>${rfi_agg_data_lookback_days}</args>
+            <capture-output/>
+        </ssh>
+        <ok to="join_load_conv_data"/>
+        <error to="join_load_conv_data"/>
+    </action>
+
+    <join name="join_load_conv_data" to="join_load_data"/>
+
+    <decision name="CheckLoadDataError">
+        <switch>
+            <case to="fail_1">${wf:actionExternalStatus("LoadAdvertiserDataToHive") != "OK"}</case>
+            <case to="fail_1">${wf:actionExternalStatus("LoadAdvertiserFilterReducerConfig") != "OK"}</case>
+            <case to="fail_1">${wf:actionExternalStatus("LoadAdvertiserAdMapping") != "OK"}</case>
+            <case to="fail_1">${wf:actionExternalStatus("LoadPublisherDataToHive") != "OK"}</case>
+            <case to="fail_1">${wf:actionExternalStatus("LoadPublisherFilterReducerConfig") != "OK"}</case>
+            <case to="fail_1">${wf:actionExternalStatus("LoadAdvertiserConversionDataToHive") != "OK"}</case>
+            <case to="fail_1">${wf:actionExternalStatus("LoadAdvertiserXdConversionDataToHive") != "OK"}</case>
+            <case to="fail_1">${wf:actionExternalStatus("LoadConversionFilterReducerConfig") != "OK"}</case>
+            <case to="fail_1">${wf:actionExternalStatus("LoadRfiAggregateImpressions") != "OK"}</case>
+            <case to="fail_1">${wf:actionExternalStatus("LoadRfiAggregateConversionAction") != "OK"}</case>
+            <case to="fail_1">${wf:actionExternalStatus("LoadRfiAggregateDailyConversionAction") != "OK"}</case>
+            <case to="fail_1">${wf:actionExternalStatus("LoadRfiXdAggregateConversionAction") != "OK"}</case>
+            <default to="fork_1"/>
+        </switch>
+    </decision>
+
+    <fork name="fork_1">
+        <path start="AdvertiserReport"/>
+        <path start="PublisherReport"/>
+        <path start="ConversionReport"/>
+        <path start="XdConversionReport"/>
+    </fork>
+
+    <action name="AdvertiserReport">
+        <ssh>
+            <host>${er_cron_host}</host>
+            <command>/bin/bash</command>
+            <args>${CODE_BASE}/scripts/spark/advertiser_report</args>
+            <args>${environment}</args>
+            <args>${er_cron_date_unified}</args>
+            <args>${rfi_agg_data_lookback_days}</args>
+            <capture-output/>
+        </ssh>
+        <ok to="LoadAdvertiserRatioToVertica"/>
+        <error to="join_1"/>
+    </action>
+
+    <action name="LoadAdvertiserRatioToVertica">
+        <ssh>
+            <host>${er_cron_host}</host>
+            <command>${CODE_BASE}/dp/externalreport/hive_to_vertica_loader_bin</command>
+            <args>--environment</args>
+            <args>${environment}</args>
+            <args>--run_date</args>
+            <args>${er_cron_date_unified}</args>
+            <args>--look_back_days</args>
+            <args>${advertiser_param_data_inclusion_days}</args>
+            <args>--table</args>
+            <args>advertiser_external_ratio</args>
+            <capture-output/>
+        </ssh>
+        <ok to="join_1"/>
+        <error to="join_1"/>
+    </action>
+
+    <action name="PublisherReport">
+        <ssh>
+            <host>${er_cron_host}</host>
+            <command>/bin/bash</command>
+            <args>${CODE_BASE}/scripts/spark/publisher_report</args>
+            <args>${environment}</args>
+            <args>${er_cron_date_unified}</args>
+            <args>${rfi_agg_data_lookback_days}</args>
+            <capture-output/>
+        </ssh>
+        <ok to="LoadPublisherRatioToVertica"/>
+        <error to="join_1"/>
+    </action>
+
+    <action name="LoadPublisherRatioToVertica">
+        <ssh>
+            <host>${er_cron_host}</host>
+            <command>${CODE_BASE}/dp/externalreport/hive_to_vertica_loader_bin</command>
+            <args>--environment</args>
+            <args>${environment}</args>
+            <args>--run_date</args>
+            <args>${er_cron_date_unified}</args>
+            <args>--look_back_days</args>
+            <args>${publisher_param_data_inclusion_days}</args>
+            <args>--table</args>
+            <args>publisher_external_ratio</args>
+            <capture-output/>
+        </ssh>
+        <ok to="LoadAggregateAdLogsAndPublisherDataToVertica"/>
+        <error to="join_1"/>
+    </action>
+
+    <action name="LoadAggregateAdLogsAndPublisherDataToVertica">
+        <ssh>
+            <host>${er_cron_host}</host>
+            <command>${CODE_BASE}/dp/externalreport/hive_to_vertica_loader_bin</command>
+            <args>--environment</args>
+            <args>${environment}</args>
+            <args>--run_date</args>
+            <args>${er_cron_date_unified}</args>
+            <args>--look_back_days</args>
+            <args>${publisher_param_data_inclusion_days}</args>
+            <args>--table</args>
+            <args>ad_logs_and_publisher_data</args>
+            <capture-output/>
+        </ssh>
+        <ok to="join_1"/>
+        <error to="join_1"/>
+    </action>
+
+    <action name="ConversionReport">
+        <ssh>
+            <host>${er_cron_host}</host>
+            <command>/bin/bash</command>
+            <args>${CODE_BASE}/scripts/spark/conversion_report</args>
+            <args>${environment}</args>
+            <args>${er_cron_date_unified}</args>
+            <capture-output/>
+        </ssh>
+        <ok to="LoadConversionRatioToVertica"/>
+        <error to="join_1"/>
+    </action>
+
+    <action name="LoadConversionRatioToVertica">
+        <ssh>
+            <host>${er_cron_host}</host>
+            <command>${CODE_BASE}/dp/externalreport/hive_to_vertica_loader_bin</command>
+            <args>--environment</args>
+            <args>${environment}</args>
+            <args>--run_date</args>
+            <args>${er_cron_date_unified}</args>
+            <args>--look_back_days</args>
+            <args>${advertiser_conversion_data_inclusion_days}</args>
+            <args>--table</args>
+            <args>advertiser_external_conversion_ratio</args>
+            <capture-output/>
+        </ssh>
+        <ok to="join_1"/>
+        <error to="join_1"/>
+    </action>
+
+    <action name="XdConversionReport">
+        <ssh>
+            <host>${er_cron_host}</host>
+            <command>/bin/bash</command>
+            <args>${CODE_BASE}/scripts/spark/xd_conversion_report</args>
+            <args>${environment}</args>
+            <args>${er_cron_date_unified}</args>
+            <capture-output/>
+        </ssh>
+        <ok to="join_1"/>
+        <error to="join_1"/>
+    </action>
+
+    <join name="join_1" to="CheckErrors"/>
+    <decision name="CheckErrors">
+        <switch>
+            <case to="fail_1">${wf:actionExternalStatus("AdvertiserReport") != "OK"}</case>
+            <case to="fail_1">${wf:actionExternalStatus("LoadAdvertiserRatioToVertica") != "OK"}</case>
+            <case to="fail_1">${wf:actionExternalStatus("PublisherReport") != "OK"}</case>
+            <case to="fail_1">${wf:actionExternalStatus("LoadPublisherRatioToVertica") != "OK"}</case>
+            <case to="fail_1">${wf:actionExternalStatus("ConversionReport") != "OK"}</case>
+            <case to="fail_1">${wf:actionExternalStatus("LoadConversionRatioToVertica") != "OK"}</case>
+            <case to="fail_1">${wf:actionExternalStatus("XdConversionReport") != "OK"}</case>
+            <case to="fail_1">${wf:actionExternalStatus("LoadAggregateAdLogsAndPublisherDataToVertica") != "OK"}</case>
+            <default to="CheckAndMarkImpressionReadyDoneFile"/>
+        </switch>
+    </decision>
+
+    <action name="CheckAndMarkImpressionReadyDoneFile">
+        <ssh>
+            <host>${er_cron_host}</host>
+            <command>/bin/bash</command>
+            <args>${check_and_mark_max_done_file_script}</args>
+            <args>${rfi_recent_data_ready_marker_path}</args>
+            <args>${impression_ready_done_marker_path}</args>
+            <capture-output/>
+        </ssh>
+        <ok to="CheckAndMarkConversionReadyDoneFile"/>
+        <error to="fail_1"/>
+    </action>
+
+    <action name="CheckAndMarkConversionReadyDoneFile">
+        <ssh>
+            <host>${er_cron_host}</host>
+            <command>/bin/bash</command>
+            <args>${check_and_mark_max_done_file_script}</args>
+            <args>${rfi_recent_conv_data_ready_marker_path}</args>
+            <args>${conversion_ready_done_marker_path}</args>
+            <capture-output/>
+        </ssh>
+        <ok to="end_1"/>
+        <error to="fail_1"/>
+    </action>
+
+    <kill name="fail_1">
+        <message>External Report Hourly workflow failed, error
+            message[${wf:errorMessage(wf:lastErrorNode())}]
+        </message>
+    </kill>
+    <end name="end_1"/>
+
+</workflow-app>
+

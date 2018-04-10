@@ -1,0 +1,34 @@
+<configuration>
+  <property>
+    <name>VOSTOK_DEPLOY_BASE_DIR</name>
+    <value>/srv/app/autodeploy/data.vostok</value>
+  </property>
+  <property>
+    <name>ag_offline_script</name>
+    <value>/srv/app/autodeploy/data.vostok/modeling.pipelines.ag_offline.ag_offline_pkg-latest/modeling/pipelines/ag_offline/driver_bin</value>
+  </property>
+  <property>
+    <name>HDFS_WORKFLOW_PATH</name>
+    <value>/tmp/tmp9lg59e</value>
+  </property>
+  <property>
+    <name>user.name</name>
+    <value>ag</value>
+  </property>
+  <property>
+    <name>common_args</name>
+    <value>--prod_mode false --print_mode true --bootstrap_conf lsv --check_marker true --create_marker false --package_base /srv/app/autodeploy/data.vostok/modeling.pipelines.ag_offline.ag_offline_pkg-latest --data_date 20170725 --run_id 1 --model_configs demo_eval_world_atomic --model_dates 20170307 --model_ids 3295 --demo_configs atomic_segments.txt --backfill_days 1 --online_hbase_dcs lax-arp,eqv-arp,ewr-arp,sjc-arp</value>
+  </property>
+  <property>
+    <name>mapreduce.job.user.name</name>
+    <value>ag</value>
+  </property>
+  <property>
+    <name>HOST_NAME</name>
+    <value>lsv-203.rfiserve.net</value>
+  </property>
+  <property>
+    <name>oozie.wf.application.path</name>
+    <value>/tmp/tmp9lg59e</value>
+  </property>
+</configuration>
