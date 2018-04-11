@@ -57,7 +57,7 @@ def _replace_with_jinja(command):
     return replaced_cmd
 
 
-def _convert_properties_file(properties_file, properties_output_file):
+def convert_properties_file(properties_file, properties_output_file):
     output_json = OrderedDict()
     with open(properties_file) as fd:
         properties = xmltodict.parse(fd.read())['configuration']['property']
@@ -75,7 +75,7 @@ def _extract_task_name(case_text):
         return task_names[0]
 
 
-def _convert(workflow_xml, json_output_file):
+def convert_oozie_xml(workflow_xml, json_output_file):
     print "Reading from ", workflow_xml
     with open(workflow_xml) as fd:
         doc = xmltodict.parse(fd.read())
@@ -200,10 +200,10 @@ def _handle_join_nodes(af_operators, workflow):
 def main():
     args = _parsed_args()
     if args.workflow_path:
-        _convert(args.workflow_path, args.middleware_file)
+        convert_oozie_xml(args.workflow_path, args.middleware_file)
     else:
-        _convert_properties_file(args.properties_file,
-                                 args.properties_json_file)
+        convert_properties_file(args.properties_file,
+                                args.properties_json_file)
 
 
 if __name__ == "__main__":

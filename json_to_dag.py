@@ -1,12 +1,14 @@
+"""Airflow DAG config to Airflow python DAG code."""
 from jinja2 import Environment, FileSystemLoader
 import os
 import argparse
 import json
 import textwrap
-from common.settings import TEMPLATE_DIR, OUT_DIR
 
 LINE_LENGTH = 79
 TAB_LENGTH = 4
+TEMPLATE_DIR='templates'
+
 
 def textwrap_func(key, value, extra_indent_length):
     # Indent for [tab, single quotes around key,
@@ -36,7 +38,7 @@ class DagGenerator(object):
         self.env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
 
     def run(self):
-        file_path = os.path.join(OUT_DIR, self.output_file)
+        file_path = os.path.join(self.output_file)
         if os.path.isfile(file_path):
             print "Found file : %s, removed." % file_path
             os.remove(file_path)
@@ -147,8 +149,7 @@ class DagGenerator(object):
         template = self.env.get_template('properties.tpl')
         output_from_parsed_template = template.render(
             property_name=property_name,
-            property_dict=property_dict,
-            textwrap_func=textwrap_func)
+            property_dict=property_dict)
         self.write_dag_to_file(template=output_from_parsed_template)
 
         return {
@@ -156,21 +157,24 @@ class DagGenerator(object):
             "dict": property_dict
         }
 
-    def write_dag_to_file(self, template, file_name="test_dag.py"):
+    def write_dag_to_file(self, template):
         """save the results to the file"""
-        if self.output_file:
-            file_name = self.output_file
-
-        with open(os.path.join(OUT_DIR, file_name), "a") as fh:
+        with open(os.path.join(self.output_file), "a") as fh:
             fh.write(template)
             fh.write("\n")
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--middleware_file', help='middleware file')
-    parser.add_argument('--property_file', help='property file')
-    parser.add_argument('--output_file', help='output file')
+    parser.add_argument('--middleware_file',
+                        help='Json file created from oozie workflow',
+                        required=True)
+    parser.add_argument('--property_file',
+                        help='Json file created from oozie properties.xml',
+                        required=True)
+    parser.add_argument('--output_file',
+                        help='Output file containing the Airflow DAG code.',
+                        required=True)
     args = parser.parse_args()
 
     dagGenerator = DagGenerator(middleware_file=args.middleware_file,
