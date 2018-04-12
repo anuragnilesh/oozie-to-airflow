@@ -13,7 +13,7 @@ class Workflow(object):
     def __init__(self, workflow_json):
         self.workflow_json = workflow_json
         self.name = self.workflow_json['@name']
-        self.start_node = self.get_nodes_for('start')['@to']
+        self.start_node = self.get_nodes_for('start')[0]['@to']
         self.kill_node = self.get_node_name_for('kill')
         self.end_node = self.get_node_name_for('end')
 
@@ -22,8 +22,13 @@ class Workflow(object):
             return self.workflow_json[element]['@name']
 
     def get_nodes_for(self, element):
-        if element in self.workflow_json:
-            return self.workflow_json[element]
+        return Workflow.get_nodes_in(self.workflow_json, element)
+
+    @staticmethod
+    def get_nodes_in(node, element):
+        if element in node:
+            nodes = node[element]
+            return [nodes] if type(nodes) != list else nodes
         else:
             return list()
 
@@ -152,7 +157,11 @@ def _handle_end_node(af_operators, workflow):
 
 def _handle_decision_nodes(af_operators, workflow):
     for decision_node in workflow.get_nodes_for('decision'):
-        switch_cases = decision_node['switch']['case']
+        switch_cases = list()
+        switch_nodes = Workflow.get_nodes_in(decision_node, 'switch')
+        for switch_node in switch_nodes:
+            case_nodes = Workflow.get_nodes_in(switch_node, 'case')
+            switch_cases.extend(case_nodes)
         case_transitions = set()
         case_tasks = set()
         for case in switch_cases:
@@ -164,7 +173,7 @@ def _handle_decision_nodes(af_operators, workflow):
             case_tasks.add(task_name)
         case_transitions = list(case_transitions)
         assert len(
-            case_transitions) == 1, "Transitions to more than one state"
+            case_transitions) == 1, "Transitions to more/less than one state"
         assert workflow.is_kill_or_end_node(case_transitions[0])
 
         # The decision node shall transition only to

@@ -95,7 +95,7 @@ args = {
     'owner': 'team_name',
     'depends_on_past': False,
     'start_date': airflow.utils.dates.days_ago(2),
-    'email': ['team@rocketfuelinc.com'],
+    'email': ['team@abc.com'],
     'email_on_failure': False,
     'email_on_retry': False,
     'retries': 1,
@@ -116,145 +116,37 @@ args = {
 }
 
 dag = DAG(
-    dag_id='er_spark_20170727',
+    dag_id='workflow_2',
     default_args=args,
     schedule_interval=None)
 
-CheckAndMarkRfiRecentDataReadyFile_task = BashOperator(
-    task_id='CheckAndMarkRfiRecentDataReadyFile',
-    bash_command='ssh -l {{params.owner}} {{ params.er_cron_host }} /bin/bash'
-                 ' {{ params.check_and_mark_max_done_file_s'
-                 'cript }} {{ params.etl_daily_aggregate_jo'
-                 'bs_done_marker_path }} {{ '
+task1_task = BashOperator(
+    task_id='task1',
+    bash_command='ssh -l {{params.run_as_user}} {{ params.er_cron_host }} '
+                 '/bin/bash {{ params.check_and_mark_max_do'
+                 'ne_file_script }} {{ params.etl_daily_agg'
+                 'regate_jobs_done_marker_path }} {{ '
                  'params.rfi_recent_data_ready_marker_path '
                  '}}',
     params=params,
     trigger_rule='all_success',
     dag=dag)
 
-CheckAndMarkRfiRecentConvDataReadyFile_task = BashOperator(
-    task_id='CheckAndMarkRfiRecentConvDataReadyFile',
-    bash_command='ssh -l {{params.owner}} {{ params.er_cron_host }} /bin/bash'
-                 ' {{ params.check_and_mark_max_done_file_s'
-                 'cript }} {{ params.epiphany_daily_attribu'
-                 'tion_jobs_done_marker_path }} {{ params.r'
-                 'fi_recent_conv_data_ready_marker_path }}',
+task2_task = BashOperator(
+    task_id='task2',
+    bash_command='ssh -l {{params.run_as_user}} {{ params.er_cron_host }} '
+                 '/bin/bash {{ params.check_and_mark_max_do'
+                 'ne_file_script }} {{ params.epiphany_dail'
+                 'y_attribution_jobs_done_marker_path }} {{'
+                 ' params.rfi_recent_conv_data_ready_marker'
+                 '_path }}',
     params=params,
     trigger_rule='all_success',
     dag=dag)
 
-LoadAdvertiserDataToHive_task = BashOperator(
-    task_id='LoadAdvertiserDataToHive',
-    bash_command='ssh -l {{params.owner}} {{ params.er_cron_host }} /bin/bash'
-                 ' {{ params.load_adv_data_to_hive_script '
-                 '}} {{ params.environment }} {{ '
-                 'params.vertica_reports_db_ro_url }} {{ '
-                 'params.vertica_reports_db_ro_username }} '
-                 '{{ params.vertica_reports_db_ro_pwd }} {{'
-                 ' params.vertica_reports_db_ro_schema }} '
-                 '{{ params.er_cron_date_unified }} {{ para'
-                 'ms.advertiser_param_data_inclusion_days '
-                 '}} {{ '
-                 'params.rfi_recent_data_ready_marker_path '
-                 '}}',
-    params=params,
-    trigger_rule='all_success',
-    dag=dag)
-
-LoadAdvertiserFilterReducerConfig_task = BashOperator(
-    task_id='LoadAdvertiserFilterReducerConfig',
-    bash_command='ssh -l {{params.owner}} {{ params.er_cron_host }} {{ '
-                 'params.CODE_BASE '
-                 '}}/dp/externalreport/whitelist_info_bin '
-                 '--type advertiser --output {{ '
-                 'params.VAR_BASE '
-                 '}}/config_advertiser_filter.yml',
-    params=params,
-    trigger_rule='all_success',
-    dag=dag)
-
-LoadAdvertiserAdMapping_task = BashOperator(
-    task_id='LoadAdvertiserAdMapping',
-    bash_command='ssh -l {{params.owner}} {{ params.er_cron_host }} /bin/bash'
-                 ' {{ params.CODE_BASE }}/scripts/hive'
-                 '/load-advertiser-ad-mapping {{ '
-                 'params.environment }} {{ '
-                 'params.reports_db_ro_url }} {{ '
-                 'params.reports_db_ro_username }} {{ '
-                 'params.reports_db_ro_pwd }} {{ '
-                 'params.reports_db_ro_schema }} {{ '
-                 'params.er_cron_date_unified }}',
-    params=params,
-    trigger_rule='all_success',
-    dag=dag)
-
-LoadPublisherDataToHive_task = BashOperator(
-    task_id='LoadPublisherDataToHive',
-    bash_command='ssh -l {{params.owner}} {{ params.er_cron_host }} /bin/bash'
-                 ' {{ params.load_pub_data_to_hive_script '
-                 '}} {{ params.environment }} {{ '
-                 'params.reports_db_ro_url }} {{ '
-                 'params.reports_db_ro_username }} {{ '
-                 'params.reports_db_ro_pwd }} {{ '
-                 'params.reports_db_ro_schema }} {{ '
-                 'params.er_cron_date_unified }} {{ params.'
-                 'publisher_param_data_inclusion_days }} {{'
-                 ' params.rfi_recent_data_ready_marker_path'
-                 ' }}',
-    params=params,
-    trigger_rule='all_success',
-    dag=dag)
-
-LoadPublisherFilterReducerConfig_task = BashOperator(
-    task_id='LoadPublisherFilterReducerConfig',
-    bash_command='ssh -l {{params.owner}} {{ params.er_cron_host }} {{ '
-                 'params.CODE_BASE '
-                 '}}/dp/externalreport/whitelist_info_bin '
-                 '--type publisher --output {{ '
-                 'params.VAR_BASE '
-                 '}}/config_publisher_filter.yml',
-    params=params,
-    trigger_rule='all_success',
-    dag=dag)
-
-LoadAdvertiserConversionDataToHive_task = BashOperator(
-    task_id='LoadAdvertiserConversionDataToHive',
-    bash_command='ssh -l {{params.owner}} {{ params.er_cron_host }} /bin/bash'
-                 ' {{ '
-                 'params.load_adv_conv_data_to_hive_script '
-                 '}} {{ params.environment }} {{ '
-                 'params.vertica_reports_db_ro_url }} {{ '
-                 'params.vertica_reports_db_ro_username }} '
-                 '{{ params.vertica_reports_db_ro_pwd }} {{'
-                 ' params.vertica_reports_db_ro_schema }} '
-                 '{{ params.er_cron_date_unified }} {{ para'
-                 'ms.advertiser_conversion_data_inclusion_d'
-                 'ays }} {{ params.rfi_recent_conv_data_rea'
-                 'dy_marker_path }}',
-    params=params,
-    trigger_rule='all_success',
-    dag=dag)
-
-LoadAdvertiserXdConversionDataToHive_task = BashOperator(
-    task_id='LoadAdvertiserXdConversionDataToHive',
-    bash_command='ssh -l {{params.owner}} {{ params.er_cron_host }} /bin/bash'
-                 ' {{ params.load_adv_xd_conv_data_to_hive_'
-                 'script }} {{ params.environment }} {{ '
-                 'params.vertica_reports_db_ro_url }} {{ '
-                 'params.vertica_reports_db_ro_username }} '
-                 '{{ params.vertica_reports_db_ro_pwd }} {{'
-                 ' params.vertica_reports_db_ro_schema }} '
-                 '{{ params.er_cron_date_unified }} {{ para'
-                 'ms.advertiser_conversion_data_inclusion_d'
-                 'ays }} {{ params.rfi_recent_conv_data_rea'
-                 'dy_marker_path }}',
-    params=params,
-    trigger_rule='all_success',
-    dag=dag)
-
-LoadConversionFilterReducerConfig_task = BashOperator(
-    task_id='LoadConversionFilterReducerConfig',
-    bash_command='ssh -l {{params.owner}} {{ params.er_cron_host }} {{ '
+task4_task = BashOperator(
+    task_id='task4',
+    bash_command='ssh -l {{params.run_as_user}} {{ params.er_cron_host }} {{ '
                  'params.CODE_BASE '
                  '}}/dp/externalreport/whitelist_info_bin '
                  '--type conversion --output {{ '
@@ -264,11 +156,11 @@ LoadConversionFilterReducerConfig_task = BashOperator(
     trigger_rule='all_success',
     dag=dag)
 
-LoadRfiAggregateImpressions_task = BashOperator(
-    task_id='LoadRfiAggregateImpressions',
-    bash_command='ssh -l {{params.owner}} {{ params.er_cron_host }} /bin/bash'
-                 ' {{ params.CODE_BASE }}/scripts/hive/load'
-                 '_rfi_aggregate_impressions {{ '
+task5_task = BashOperator(
+    task_id='task5',
+    bash_command='ssh -l {{params.run_as_user}} {{ params.er_cron_host }} '
+                 '/bin/bash {{ params.CODE_BASE }}/scripts/'
+                 'hive/load_rfi_aggregate_impressions {{ '
                  'params.environment }} {{ '
                  'params.er_cron_date_unified }} {{ '
                  'params.rfi_agg_data_lookback_days }}',
@@ -276,12 +168,12 @@ LoadRfiAggregateImpressions_task = BashOperator(
     trigger_rule='all_success',
     dag=dag)
 
-LoadRfiAggregateDailyConversionAction_task = BashOperator(
-    task_id='LoadRfiAggregateDailyConversionAction',
-    bash_command='ssh -l {{params.owner}} {{ params.er_cron_host }} /bin/bash'
-                 ' {{ params.CODE_BASE }}/scripts/hive/load'
-                 '_rfi_aggregate_daily_conversion_action {{'
-                 ' params.environment }} {{ '
+task6_task = BashOperator(
+    task_id='task6',
+    bash_command='ssh -l {{params.run_as_user}} {{ params.er_cron_host }} '
+                 '/bin/bash {{ params.CODE_BASE }}/scripts/'
+                 'hive/load_rfi_aggregate_daily_conversion_'
+                 'action {{ params.environment }} {{ '
                  'params.er_cron_date_unified }} {{ '
                  'params.rfi_agg_data_lookback_days }} {{ p'
                  'arams.rfi_recent_conv_data_ready_marker_p'
@@ -291,235 +183,62 @@ LoadRfiAggregateDailyConversionAction_task = BashOperator(
     trigger_rule='all_success',
     dag=dag)
 
-LoadRfiAggregateConversionAction_task = BashOperator(
-    task_id='LoadRfiAggregateConversionAction',
-    bash_command='ssh -l {{params.owner}} {{ params.er_cron_host }} /bin/bash'
-                 ' {{ params.CODE_BASE }}/scripts/hive/load'
-                 '_rfi_aggregate_conversion_action {{ '
-                 'params.environment }} {{ '
+task10_task = BashOperator(
+    task_id='task10',
+    bash_command='ssh -l {{params.run_as_user}} {{ params.er_cron_host }} '
+                 '/bin/bash {{ params.CODE_BASE }}/scripts/'
+                 'hive/load_rfi_aggregate_conversion_action'
+                 ' {{ params.environment }} {{ '
                  'params.er_cron_date_unified }} {{ '
                  'params.rfi_agg_data_lookback_days }}',
     params=params,
     trigger_rule='all_success',
     dag=dag)
 
-LoadRfiXdAggregateConversionAction_task = BashOperator(
-    task_id='LoadRfiXdAggregateConversionAction',
-    bash_command='ssh -l {{params.owner}} {{ params.er_cron_host }} /bin/bash'
-                 ' {{ params.CODE_BASE }}/scripts/hive/load'
-                 '_rfi_xd_aggregate_conversion_action {{ '
-                 'params.environment }} {{ '
+task11_task = BashOperator(
+    task_id='task11',
+    bash_command='ssh -l {{params.run_as_user}} {{ params.er_cron_host }} '
+                 '/bin/bash {{ params.CODE_BASE }}/scripts/'
+                 'hive/load_rfi_xd_aggregate_conversion_act'
+                 'ion {{ params.environment }} {{ '
                  'params.er_cron_date_unified }} {{ '
                  'params.rfi_agg_data_lookback_days }}',
     params=params,
     trigger_rule='all_success',
     dag=dag)
 
-AdvertiserReport_task = BashOperator(
-    task_id='AdvertiserReport',
-    bash_command='ssh -l {{params.owner}} {{ params.er_cron_host }} /bin/bash'
-                 ' {{ params.CODE_BASE '
-                 '}}/scripts/spark/advertiser_report {{ '
-                 'params.environment }} {{ '
-                 'params.er_cron_date_unified }} {{ '
-                 'params.rfi_agg_data_lookback_days }}',
-    params=params,
-    trigger_rule='all_success',
+task8_task = DummyOperator(
+    task_id='task8',
     dag=dag)
 
-LoadAdvertiserRatioToVertica_task = BashOperator(
-    task_id='LoadAdvertiserRatioToVertica',
-    bash_command='ssh -l {{params.owner}} {{ params.er_cron_host }} {{ '
-                 'params.CODE_BASE }}/dp/externalreport/hiv'
-                 'e_to_vertica_loader_bin --environment {{ '
-                 'params.environment }} --run_date {{ '
-                 'params.er_cron_date_unified }} '
-                 '--look_back_days {{ params.advertiser_par'
-                 'am_data_inclusion_days }} --table '
-                 'advertiser_external_ratio',
-    params=params,
-    trigger_rule='all_success',
+task3_task = DummyOperator(
+    task_id='task3',
     dag=dag)
 
-PublisherReport_task = BashOperator(
-    task_id='PublisherReport',
-    bash_command='ssh -l {{params.owner}} {{ params.er_cron_host }} /bin/bash'
-                 ' {{ params.CODE_BASE '
-                 '}}/scripts/spark/publisher_report {{ '
-                 'params.environment }} {{ '
-                 'params.er_cron_date_unified }} {{ '
-                 'params.rfi_agg_data_lookback_days }}',
-    params=params,
-    trigger_rule='all_success',
+task9_task = DummyOperator(
+    task_id='task9',
     dag=dag)
 
-LoadPublisherRatioToVertica_task = BashOperator(
-    task_id='LoadPublisherRatioToVertica',
-    bash_command='ssh -l {{params.owner}} {{ params.er_cron_host }} {{ '
-                 'params.CODE_BASE }}/dp/externalreport/hiv'
-                 'e_to_vertica_loader_bin --environment {{ '
-                 'params.environment }} --run_date {{ '
-                 'params.er_cron_date_unified }} '
-                 '--look_back_days {{ params.publisher_para'
-                 'm_data_inclusion_days }} --table '
-                 'publisher_external_ratio',
-    params=params,
-    trigger_rule='all_success',
+task7_task = DummyOperator(
+    task_id='task7',
     dag=dag)
 
-LoadAggregateAdLogsAndPublisherDataToVertica_task = BashOperator(
-    task_id='LoadAggregateAdLogsAndPublisherDataToVertica',
-    bash_command='ssh -l {{params.owner}} {{ params.er_cron_host }} {{ '
-                 'params.CODE_BASE }}/dp/externalreport/hiv'
-                 'e_to_vertica_loader_bin --environment {{ '
-                 'params.environment }} --run_date {{ '
-                 'params.er_cron_date_unified }} '
-                 '--look_back_days {{ params.publisher_para'
-                 'm_data_inclusion_days }} --table '
-                 'ad_logs_and_publisher_data',
-    params=params,
-    trigger_rule='all_success',
+task12_task = DummyOperator(
+    task_id='task12',
     dag=dag)
 
-ConversionReport_task = BashOperator(
-    task_id='ConversionReport',
-    bash_command='ssh -l {{params.owner}} {{ params.er_cron_host }} /bin/bash'
-                 ' {{ params.CODE_BASE '
-                 '}}/scripts/spark/conversion_report {{ '
-                 'params.environment }} {{ '
-                 'params.er_cron_date_unified }}',
-    params=params,
-    trigger_rule='all_success',
-    dag=dag)
-
-LoadConversionRatioToVertica_task = BashOperator(
-    task_id='LoadConversionRatioToVertica',
-    bash_command='ssh -l {{params.owner}} {{ params.er_cron_host }} {{ '
-                 'params.CODE_BASE }}/dp/externalreport/hiv'
-                 'e_to_vertica_loader_bin --environment {{ '
-                 'params.environment }} --run_date {{ '
-                 'params.er_cron_date_unified }} '
-                 '--look_back_days {{ params.advertiser_con'
-                 'version_data_inclusion_days }} --table '
-                 'advertiser_external_conversion_ratio',
-    params=params,
-    trigger_rule='all_success',
-    dag=dag)
-
-XdConversionReport_task = BashOperator(
-    task_id='XdConversionReport',
-    bash_command='ssh -l {{params.owner}} {{ params.er_cron_host }} /bin/bash'
-                 ' {{ params.CODE_BASE '
-                 '}}/scripts/spark/xd_conversion_report {{ '
-                 'params.environment }} {{ '
-                 'params.er_cron_date_unified }}',
-    params=params,
-    trigger_rule='all_success',
-    dag=dag)
-
-CheckAndMarkImpressionReadyDoneFile_task = BashOperator(
-    task_id='CheckAndMarkImpressionReadyDoneFile',
-    bash_command='ssh -l {{params.owner}} {{ params.er_cron_host }} /bin/bash'
-                 ' {{ params.check_and_mark_max_done_file_s'
-                 'cript }} {{ '
-                 'params.rfi_recent_data_ready_marker_path '
-                 '}} {{ '
-                 'params.impression_ready_done_marker_path '
-                 '}}',
-    params=params,
-    trigger_rule='all_success',
-    dag=dag)
-
-CheckAndMarkConversionReadyDoneFile_task = BashOperator(
-    task_id='CheckAndMarkConversionReadyDoneFile',
-    bash_command='ssh -l {{params.owner}} {{ params.er_cron_host }} /bin/bash'
-                 ' {{ params.check_and_mark_max_done_file_s'
-                 'cript }} {{ params.rfi_recent_conv_data_r'
-                 'eady_marker_path }} {{ '
-                 'params.conversion_ready_done_marker_path '
-                 '}}',
-    params=params,
-    trigger_rule='all_success',
-    dag=dag)
-
-CheckLoadDataError_task = DummyOperator(
-    task_id='CheckLoadDataError',
-    dag=dag)
-
-CheckErrors_task = DummyOperator(
-    task_id='CheckErrors',
-    dag=dag)
-
-fork_load_data_task = DummyOperator(
-    task_id='fork_load_data',
-    dag=dag)
-
-fork_load_conv_data_task = DummyOperator(
-    task_id='fork_load_conv_data',
-    dag=dag)
-
-fork_1_task = DummyOperator(
-    task_id='fork_1',
-    dag=dag)
-
-join_load_data_task = DummyOperator(
-    task_id='join_load_data',
-    dag=dag)
-
-join_load_conv_data_task = DummyOperator(
-    task_id='join_load_conv_data',
-    dag=dag)
-
-join_1_task = DummyOperator(
-    task_id='join_1',
-    dag=dag)
-
-CheckAndMarkRfiRecentConvDataReadyFile_task.set_upstream(CheckAndMarkRfiRecentDataReadyFile_task)
-fork_load_data_task.set_upstream(CheckAndMarkRfiRecentConvDataReadyFile_task)
-join_load_data_task.set_upstream(LoadAdvertiserDataToHive_task)
-join_load_data_task.set_upstream(LoadAdvertiserFilterReducerConfig_task)
-join_load_data_task.set_upstream(LoadAdvertiserAdMapping_task)
-join_load_data_task.set_upstream(LoadPublisherDataToHive_task)
-join_load_data_task.set_upstream(LoadPublisherFilterReducerConfig_task)
-join_load_data_task.set_upstream(LoadAdvertiserConversionDataToHive_task)
-join_load_data_task.set_upstream(LoadAdvertiserXdConversionDataToHive_task)
-join_load_data_task.set_upstream(LoadConversionFilterReducerConfig_task)
-join_load_data_task.set_upstream(LoadRfiAggregateImpressions_task)
-fork_load_conv_data_task.set_upstream(LoadRfiAggregateDailyConversionAction_task)
-join_load_data_task.set_upstream(LoadRfiAggregateDailyConversionAction_task)
-join_load_conv_data_task.set_upstream(LoadRfiAggregateConversionAction_task)
-join_load_conv_data_task.set_upstream(LoadRfiXdAggregateConversionAction_task)
-join_1_task.set_upstream(AdvertiserReport_task)
-LoadAdvertiserRatioToVertica_task.set_upstream(AdvertiserReport_task)
-join_1_task.set_upstream(LoadAdvertiserRatioToVertica_task)
-join_1_task.set_upstream(PublisherReport_task)
-LoadPublisherRatioToVertica_task.set_upstream(PublisherReport_task)
-LoadAggregateAdLogsAndPublisherDataToVertica_task.set_upstream(LoadPublisherRatioToVertica_task)
-join_1_task.set_upstream(LoadPublisherRatioToVertica_task)
-join_1_task.set_upstream(LoadAggregateAdLogsAndPublisherDataToVertica_task)
-LoadConversionRatioToVertica_task.set_upstream(ConversionReport_task)
-join_1_task.set_upstream(ConversionReport_task)
-join_1_task.set_upstream(LoadConversionRatioToVertica_task)
-join_1_task.set_upstream(XdConversionReport_task)
-CheckAndMarkConversionReadyDoneFile_task.set_upstream(CheckAndMarkImpressionReadyDoneFile_task)
-fork_1_task.set_upstream(CheckLoadDataError_task)
-CheckAndMarkImpressionReadyDoneFile_task.set_upstream(CheckErrors_task)
-LoadAdvertiserDataToHive_task.set_upstream(fork_load_data_task)
-LoadAdvertiserFilterReducerConfig_task.set_upstream(fork_load_data_task)
-LoadAdvertiserAdMapping_task.set_upstream(fork_load_data_task)
-LoadPublisherDataToHive_task.set_upstream(fork_load_data_task)
-LoadPublisherFilterReducerConfig_task.set_upstream(fork_load_data_task)
-LoadAdvertiserConversionDataToHive_task.set_upstream(fork_load_data_task)
-LoadAdvertiserXdConversionDataToHive_task.set_upstream(fork_load_data_task)
-LoadConversionFilterReducerConfig_task.set_upstream(fork_load_data_task)
-LoadRfiAggregateImpressions_task.set_upstream(fork_load_data_task)
-LoadRfiAggregateDailyConversionAction_task.set_upstream(fork_load_data_task)
-LoadRfiAggregateConversionAction_task.set_upstream(fork_load_conv_data_task)
-LoadRfiXdAggregateConversionAction_task.set_upstream(fork_load_conv_data_task)
-AdvertiserReport_task.set_upstream(fork_1_task)
-PublisherReport_task.set_upstream(fork_1_task)
-ConversionReport_task.set_upstream(fork_1_task)
-XdConversionReport_task.set_upstream(fork_1_task)
-CheckLoadDataError_task.set_upstream(join_load_data_task)
-join_load_data_task.set_upstream(join_load_conv_data_task)
-CheckErrors_task.set_upstream(join_1_task)
+task2_task.set_upstream(task1_task)
+task3_task.set_upstream(task2_task)
+task7_task.set_upstream(task4_task)
+task7_task.set_upstream(task5_task)
+task9_task.set_upstream(task6_task)
+task7_task.set_upstream(task6_task)
+task12_task.set_upstream(task10_task)
+task12_task.set_upstream(task11_task)
+task4_task.set_upstream(task3_task)
+task5_task.set_upstream(task3_task)
+task6_task.set_upstream(task3_task)
+task10_task.set_upstream(task9_task)
+task11_task.set_upstream(task9_task)
+task8_task.set_upstream(task7_task)
+task7_task.set_upstream(task12_task)
