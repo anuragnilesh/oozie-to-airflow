@@ -3,123 +3,78 @@
     <start to="task1"/>
     <action name="task1">
         <ssh>
-            <host>${er_cron_host}</host>
-            <command>/bin/bash</command>
-            <args>${check_and_mark_max_done_file_script}</args>
-            <args>${etl_daily_aggregate_jobs_done_marker_path}</args>
-            <args>${rfi_recent_data_ready_marker_path}</args>
-            <capture-output/>
+            <host>${host}</host>
+            <command>${bash_script}</command>
+            <args>--tasks task1</args>
+            <args>${common_args}</args>
         </ssh>
         <ok to="task2"/>
         <error to="fail_1"/>
     </action>
 
-    <action name="task2">
-        <ssh>
-            <host>${er_cron_host}</host>
-            <command>/bin/bash</command>
-            <args>${check_and_mark_max_done_file_script}</args>
-            <args>${epiphany_daily_attribution_jobs_done_marker_path}</args>
-            <args>${rfi_recent_conv_data_ready_marker_path}</args>
-            <capture-output/>
-        </ssh>
-        <ok to="task3"/>
-        <error to="fail_1"/>
-    </action>
-
-    <fork name="task3">
+    <fork name="task2">
+        <path start="task3"/>
         <path start="task4"/>
-        <path start="task5"/>
-        <path start="task6"/>
     </fork>
-    <join name="task7" to="task8"/>
+    <join name="task5" to="task6"/>
+
+    <action name="task3">
+        <ssh>
+            <host>${host}</host>
+            <command>${bash_script}</command>
+            <args>--tasks task1</args>
+            <args>${common_args}</args>
+        </ssh>
+        <ok to="task5"/>
+        <error to="task5"/>
+    </action>
 
     <action name="task4">
         <ssh>
-            <host>${er_cron_host}</host>
-            <command>${CODE_BASE}/dp/externalreport/whitelist_info_bin</command>
-            <args>--type</args>
-            <args>conversion</args>
-            <args>--output</args>
-            <args>${VAR_BASE}/config_conversion_filter.yml</args>
-            <capture-output/>
+            <host>${host}</host>
+            <command>${bash_script}</command>
+            <args>--tasks task1</args>
+            <args>${common_args}</args>
         </ssh>
         <ok to="task7"/>
-        <error to="task7"/>
+        <error to="task5"/>
     </action>
 
-    <action name="task5">
-        <ssh>
-            <host>${er_cron_host}</host>
-            <command>/bin/bash</command>
-            <args>${CODE_BASE}/scripts/hive/load_rfi_aggregate_impressions</args>
-            <args>${environment}</args>
-            <args>${er_cron_date_unified}</args>
-            <args>${rfi_agg_data_lookback_days}</args>
-            <capture-output/>
-        </ssh>
-        <ok to="task7"/>
-        <error to="task7"/>
-    </action>
-
-    <action name="task6">
-        <ssh>
-            <host>${er_cron_host}</host>
-            <command>/bin/bash</command>
-            <args>${CODE_BASE}/scripts/hive/load_rfi_aggregate_daily_conversion_action</args>
-            <args>${environment}</args>
-            <args>${er_cron_date_unified}</args>
-            <args>${rfi_agg_data_lookback_days}</args>
-            <args>${rfi_recent_conv_data_ready_marker_path}</args>
-            <args>${er_rfi_agg_daily_conversion_action_marker_path}</args>
-            <capture-output/>
-        </ssh>
-        <ok to="task9"/>
-        <error to="task7"/>
-    </action>
-
-    <fork name="task9">
-        <path start="task10"/>
-        <path start="task11"/>
+    <fork name="task7">
+        <path start="task8"/>
+        <path start="task9"/>
     </fork>
 
-    <action name="task10">
+    <action name="task8">
         <ssh>
-            <host>${er_cron_host}</host>
-            <command>/bin/bash</command>
-            <args>${CODE_BASE}/scripts/hive/load_rfi_aggregate_conversion_action</args>
-            <args>${environment}</args>
-            <args>${er_cron_date_unified}</args>
-            <args>${rfi_agg_data_lookback_days}</args>
-            <capture-output/>
+            <host>${host}</host>
+            <command>${bash_script}</command>
+            <args>--tasks task1</args>
+            <args>${common_args}</args>
         </ssh>
-        <ok to="task12"/>
-        <error to="task12"/>
+        <ok to="task10"/>
+        <error to="task10"/>
     </action>
 
-    <action name="task11">
+    <action name="task9">
         <ssh>
-            <host>${er_cron_host}</host>
-            <command>/bin/bash</command>
-            <args>${CODE_BASE}/scripts/hive/load_rfi_xd_aggregate_conversion_action</args>
-            <args>${environment}</args>
-            <args>${er_cron_date_unified}</args>
-            <args>${rfi_agg_data_lookback_days}</args>
-            <capture-output/>
+            <host>${host}</host>
+            <command>${bash_script}</command>
+            <args>--tasks task1</args>
+            <args>${common_args}</args>
         </ssh>
-        <ok to="task12"/>
-        <error to="task12"/>
+        <ok to="task10"/>
+        <error to="task10"/>
     </action>
 
-    <join name="task12" to="task7"/>
+    <join name="task10" to="task5"/>
 
-    <decision name="task8">
+    <decision name="task6">
         <switch>
+            <case to="fail_1">${wf:actionExternalStatus("task3") != "OK"}</case>
             <case to="fail_1">${wf:actionExternalStatus("task4") != "OK"}</case>
-            <case to="fail_1">${wf:actionExternalStatus("task5") != "OK"}</case>
-            <case to="fail_1">${wf:actionExternalStatus("task10") != "OK"}</case>
-            <case to="fail_1">${wf:actionExternalStatus("task6") != "OK"}</case>
-            <case to="fail_1">${wf:actionExternalStatus("task11") != "OK"}</case>
+            <case to="fail_1">${wf:actionExternalStatus("task8") != "OK"}</case>
+            <case to="fail_1">${wf:actionExternalStatus("task9") != "OK"}</case>
             <default to="end_1"/>
         </switch>
     </decision>
