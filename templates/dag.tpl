@@ -2,7 +2,7 @@ args = {
     'owner': 'team_name',
     'depends_on_past': False,
     'start_date': airflow.utils.dates.days_ago(2),
-    'email': ['team@rocketfuelinc.com'],
+    'email': ['team@abc.com'],
     'email_on_failure': False,
     'email_on_retry': False,
     'retries': 1,

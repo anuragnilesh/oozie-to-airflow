@@ -1,99 +1,44 @@
-<workflow-app xmlns='uri:oozie:workflow:0.1' name='ag_offline_scoring'>
-    <start to="create_tables" />
+<workflow-app xmlns='uri:oozie:workflow:0.1' name='oozie_workflow_1'>
+    <start to="task1" />
 
-    <action name="create_tables">
+    <action name="task1">
         <ssh>
-            <host>${HOST_NAME}</host>
-            <command>${ag_offline_script}</command>
-            <args>--tasks create_tables</args>
+            <host>${host}</host>
+            <command>${bash_script}</command>
+            <args>--tasks task1</args>
             <args>${common_args}</args>
         </ssh>
-        <ok to="get_active_users"/>
+        <ok to="task2"/>
         <error to="all_fail"/>
     </action>
 
-    <action name="get_active_users">
+    <action name="task2">
         <ssh>
-            <host>${HOST_NAME}</host>
-            <command>${ag_offline_script}</command>
-            <args>--tasks check_ag_actions_users check_bt_offline get_active_users</args>
+            <host>${host}</host>
+            <command>${bash_script}</command>
+            <args>--tasks task2</args>
             <args>${common_args}</args>
         </ssh>
-        <ok to="download_model_coefficients"/>
+        <ok to="task3"/>
         <error to="all_fail"/>
     </action>
 
-    <action name="download_model_coefficients">
+    <action name="task3">
         <ssh>
-            <host>${HOST_NAME}</host>
-            <command>${ag_offline_script}</command>
-            <args>--tasks download_model_coefficients</args>
+            <host>${host}</host>
+            <command>${bash_script}</command>
+            <args>--tasks task3</args>
             <args>${common_args}</args>
         </ssh>
-        <ok to="read_and_score"/>
+        <ok to="task4"/>
         <error to="all_fail"/>
     </action>
 
-    <action name="read_and_score">
+    <action name="task4">
         <ssh>
-            <host>${HOST_NAME}</host>
-            <command>${ag_offline_script}</command>
-            <args>--tasks read_and_score</args>
-            <args>${common_args}</args>
-        </ssh>
-        <ok to="add_hive_partition_online_agprofile"/>
-        <error to="all_fail"/>
-    </action>
-
-    <action name="add_hive_partition_online_agprofile">
-        <ssh>
-            <host>${HOST_NAME}</host>
-            <command>${ag_offline_script}</command>
-            <args>--tasks add_hive_partition_online_agprofile</args>
-            <args>${common_args}</args>
-        </ssh>
-        <ok to="replicate_online_agprofile_to_inw"/>
-        <error to="all_fail"/>
-    </action>
-
-    <action name="replicate_online_agprofile_to_inw">
-        <ssh>
-            <host>${HOST_NAME}</host>
-            <command>${ag_offline_script}</command>
-            <args>--tasks replicate_online_agprofile_to_inw</args>
-            <args>${common_args}</args>
-        </ssh>
-        <ok to="add_hive_partition_score_histogram"/>
-        <error to="all_fail"/>
-    </action>
-
-    <action name="add_hive_partition_score_histogram">
-        <ssh>
-            <host>${HOST_NAME}</host>
-            <command>${ag_offline_script}</command>
-            <args>--tasks add_hive_partition_score_histogram</args>
-            <args>${common_args}</args>
-        </ssh>
-        <ok to="import_hive_to_vertica"/>
-        <error to="all_fail"/>
-    </action>
-
-    <action name="import_hive_to_vertica">
-        <ssh>
-            <host>${HOST_NAME}</host>
-            <command>${ag_offline_script}</command>
-            <args>--tasks import_hive_to_vertica</args>
-            <args>${common_args}</args>
-        </ssh>
-        <ok to="upload_to_online_hbase"/>
-        <error to="all_fail"/>
-    </action>
-
-    <action name="upload_to_online_hbase">
-        <ssh>
-            <host>${HOST_NAME}</host>
-            <command>${ag_offline_script}</command>
-            <args>--tasks upload_to_online_hbase</args>
+            <host>${host}</host>
+            <command>${bash_script}</command>
+            <args>--tasks task4</args>
             <args>${common_args}</args>
         </ssh>
         <ok to="all_done"/>

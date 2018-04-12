@@ -111,7 +111,7 @@ def convert_oozie_xml(workflow_xml, json_output_file):
 def _handle_action_nodes(af_operators, workflow):
     for action in workflow.get_nodes_for('action'):
         ssh_json = action['ssh']
-        command = 'ssh -l {{params.owner}} ' + ssh_json['host']
+        command = 'ssh -l {{params.run_as_user}} ' + ssh_json['host']
         for key, value in ssh_json.iteritems():
             if key == 'host' or not value:
                 continue
